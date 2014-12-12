@@ -3,6 +3,7 @@ package hu.dobrei.diploma.routing;
 import hu.dobrei.diploma.algebra.AbstractAlgebra;
 import hu.dobrei.diploma.network.Airport;
 import hu.dobrei.diploma.network.OpenFlightsNetwork;
+import hu.dobrei.diploma.network.Route;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,13 +20,21 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class Routing<T> {
-	private OpenFlightsNetwork graph;
-	private AbstractAlgebra<T> algebra;
-	
+	private final OpenFlightsNetwork graph;
+	private final AbstractAlgebra<T> algebra;
+	private final AbstractAlgebra<T> algebra2;
+
 	private Set<List<Airport>> allPreferredPath;
 
 	public Routing(OpenFlightsNetwork graph, AbstractAlgebra<T> algebra) {
 		this.graph = graph;
+		this.algebra = algebra;
+		this.algebra2 = null;
+	}
+
+	public Routing(OpenFlightsNetwork graph, AbstractAlgebra<T> algebra2, AbstractAlgebra<T> algebra) {
+		this.graph = graph;
+		this.algebra2 = algebra2;
 		this.algebra = algebra;
 	}
 
@@ -94,8 +103,33 @@ public class Routing<T> {
 		return airportList;
 	}
 
-	public List<Airport> getFirstPreferredPathsTo(Airport destinationAirport) {
-		return this.getAllPreferredPathsTo(destinationAirport).iterator().next();
+	public List<Airport> getFirstPreferredPathTo(Airport destinationAirport) {
+		Set<List<Airport>> allPreferredPaths = this.getAllPreferredPathsTo(destinationAirport);
+		List<Airport> airportList = null;
+		if (algebra2 != null) {
+			T min = algebra2.phi();
+			for (List<Airport> list : allPreferredPaths) {
+				List<Route> routeList = getRoutes(list);
+				T act = algebra2.W(routeList);
+				if (algebra2.order(act, min) <= 0) {
+					min = act;
+					airportList = list;
+				}
+			}
+
+		} else {
+			airportList = allPreferredPaths.iterator().next();
+		}
+		return airportList;
+	}
+
+	private List<Route> getRoutes(List<Airport> airports) {
+		List<Route> routes = Lists.newLinkedList();
+		for (int i = 1; i < airports.size(); i++) {
+			Route r = graph.getRoute(airports.get(i - 1), airports.get(i));
+			routes.add(r);
+		}
+		return routes;
 	}
 
 	public Set<List<Airport>> getAllPreferredPathsTo(Airport destinationAirport) {
@@ -172,7 +206,7 @@ public class Routing<T> {
 		Collections.reverse(toReturn);
 		return toReturn;
 	}
-	
+
 	public AbstractAlgebra<T> getAlgebra() {
 		return algebra;
 	}

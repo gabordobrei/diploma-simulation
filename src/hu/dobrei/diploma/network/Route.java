@@ -42,7 +42,7 @@ public class Route {
 
 	private int getDistance(final double a) {
 		final double b = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-		return (int) Math.round(6371 * 1000 * b);
+		return (int) Math.round(6371 * b);
 	}
 
 	private double getDeltaSine(final double sourceLongitude, final double destinationLongitude) {

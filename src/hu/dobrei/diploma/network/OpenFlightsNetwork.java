@@ -10,6 +10,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
@@ -21,17 +22,18 @@ public class OpenFlightsNetwork {
 	private final Map<Integer, Airline> airlines;
 	private final Map<Integer, Flight> flights;
 	private final Table<Airport, Airport, Route> innerGraph;
-	// private final Table<Airport, Airport, Integer> metaGraph;
+	private final List<Flight> coreFlights;
 	private static int d;
 
 	private int size;
+	private final Set<Integer> coreAirlines = ImmutableSet.of(5209, 4296, 2009, 24, 5265, 751, 1767, 1758, 4547, 3320);
 
 	public OpenFlightsNetwork() {
 		this.airports = Maps.newHashMap();
 		this.airlines = Maps.newHashMap();
 		this.flights = Maps.newHashMap();
 		this.innerGraph = HashBasedTable.create();
-		// this.metaGraph = HashBasedTable.create();
+		this.coreFlights = Lists.newLinkedList();
 
 		OpenFlightsNetwork.d = 1;
 	}
@@ -162,10 +164,19 @@ public class OpenFlightsNetwork {
 					}
 					innerGraph.get(sourceAirport, destinationAirport).increaseFlightCount();
 
+					if (isCoreFlight(parsedFlight)) {
+						coreFlights.add(parsedFlight);
+					}
+
 				} catch (IllegalArgumentException nobodyGivesAFuck) {
 					// Die silently, nobody gives a fuck
 				}
 				return true;
+			}
+
+			private boolean isCoreFlight(Flight parsedFlight) {
+				int airLineId = parsedFlight.getAirline().getId();
+				return coreAirlines.contains(airLineId);
 			}
 
 			private Flight parseFlight(List<String> args) throws IllegalArgumentException {
@@ -188,7 +199,7 @@ public class OpenFlightsNetwork {
 		Airline airline = airlines.get(airlineId);
 		return this.getFlightsbyAirline(airline);
 	}
-	
+
 	public List<Flight> getFlightsbyAirline(Airline airline) {
 		List<Flight> f = Lists.newLinkedList();
 		for (Flight flight : flights.values()) {
@@ -200,7 +211,7 @@ public class OpenFlightsNetwork {
 		return f;
 	}
 
-	// public int getCount(Airport sourceAirport, Airport destinationAirport) {
-	// return metaGraph.get(sourceAirport, destinationAirport);
-	// }
+	public List<Flight> getCoreFlights() {
+		return coreFlights;
+	}
 }

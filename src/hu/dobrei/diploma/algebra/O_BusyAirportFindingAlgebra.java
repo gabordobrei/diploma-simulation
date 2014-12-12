@@ -6,7 +6,7 @@ public class O_BusyAirportFindingAlgebra extends AbstractAlgebra<Integer> {
 
 	@Override
 	public Integer W(Route route) {
-		return route.getFlightCount();
+		return route == null ? Integer.MIN_VALUE : route.getFlightCount();
 	}
 
 	@Override

@@ -12,7 +12,8 @@ public class Main {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		Simulation.simulate();
+		Simulation simulation = new Simulation();
+		simulation.run();
 
 		System.out.println("Full time: " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + " ms.");
 	}

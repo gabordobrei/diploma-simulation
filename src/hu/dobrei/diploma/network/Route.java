@@ -74,23 +74,4 @@ public class Route {
 		return "{length: " + length + ", flightCount: " + flightCount + ", sourceAirport: " + sourceAirport.getId()
 				+ ", destinationAirport: " + destinationAirport.getId() + "}";
 	}
-
-	public RelaxedRoute getRelaxation() {
-		return new RelaxedRoute(length, flightCount, sourceAirport.getId(), destinationAirport.getId());
-	}
-	
-	@SuppressWarnings("unused")
-	public class RelaxedRoute {
-		private final int length;
-		private final int flightCount;
-		private final int sourceAirportId;
-		private final int destinationAirportId;
-
-		public RelaxedRoute(int length, int flightCount, int sourceAirportId, int destinationAirportId) {
-			this.length = length;
-			this.flightCount = flightCount;
-			this.sourceAirportId = sourceAirportId;
-			this.destinationAirportId = destinationAirportId;
-		}
-	}
 }

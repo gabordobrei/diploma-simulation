@@ -51,6 +51,8 @@ public class Airport {
 	private final double zimezone;
 	private final DST dst;
 
+	public int kifok = 0, befok = 0;
+
 	private Airport previous;
 	private List<Airport> prev;
 	private boolean scanned = false;
@@ -157,10 +159,18 @@ public class Airport {
 	}
 
 	public void scan() {
-		this.scanned = true;		
+		this.scanned = true;
 	}
-	
+
 	public boolean isScanned() {
 		return this.scanned;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + airportId;
+		return result;
 	}
 }

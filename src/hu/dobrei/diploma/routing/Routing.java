@@ -54,10 +54,11 @@ public class Routing<T> {
 					}
 				});
 		queue.add(sourceAirport);
-
 		List<Airport> prev = null;
+
 		while (!queue.isEmpty()) {
 			Airport u = queue.poll();
+
 			Collection<Airport> neighbours = graph.neighboursOf(u);
 			for (Iterator<Airport> iterator = neighbours.iterator(); iterator.hasNext();) {
 				Airport nv = iterator.next();
@@ -109,14 +110,18 @@ public class Routing<T> {
 		if (algebra2 != null) {
 			T min = algebra2.phi();
 			for (List<Airport> list : allPreferredPaths) {
-				List<Route> routeList = getRoutes(list);
+				List<Route> routeList;
+				if (!list.get(list.size() - 1).equals(destinationAirport)) {
+					routeList = getRoutes(list.subList(0, list.size() - 2));
+				} else {
+					routeList = getRoutes(list);
+				}
 				T act = algebra2.W(routeList);
 				if (algebra2.order(act, min) <= 0) {
 					min = act;
 					airportList = list;
 				}
 			}
-
 		} else {
 			airportList = allPreferredPaths.iterator().next();
 		}
@@ -143,9 +148,11 @@ public class Routing<T> {
 	private List<Airport> getPreferredPath(List<Airport> preferredPath, Airport destinationAirport) {
 		List<Airport> prev = destinationAirport.getPrev();
 		if (prev == null) {
-			preferredPath.add(destinationAirport);
-			Collections.reverse(preferredPath);
-			allPreferredPath.add(preferredPath);
+			if (preferredPath.get(0).getId() != destinationAirport.getId()) {
+				preferredPath.add(destinationAirport);
+				Collections.reverse(preferredPath);
+				allPreferredPath.add(preferredPath);
+			}
 		} else {
 			List<Airport> updatedPath = Lists.newArrayList(preferredPath);
 			updatedPath.add(destinationAirport);
@@ -158,56 +165,10 @@ public class Routing<T> {
 		return preferredPath;
 	}
 
-	public List<Airport> computeSimplePreferredPathsBetween(Airport s, Airport t) {
-		final Map<Airport, Airport> prev = Maps.newHashMap();
-		final Map<Airport, T> Distance = Maps.newHashMap();
-		PriorityQueue<Airport> queue = new PriorityQueue<Airport>(graph.getAirports().values().size(),
-				new Comparator<Airport>() {
-					@Override
-					public int compare(Airport ap1, Airport ap2) {
-						return algebra.order(Distance.get(ap1), Distance.get(ap2));
-					}
-				});
-
-		for (Airport airport : graph.getAirports().values()) {
-			Distance.put(airport, algebra.phi());
-			prev.put(airport, null);
+	public String getAlgebraName() {
+		if (algebra2 == null) {
+			return algebra.getClass().getSimpleName();
 		}
-		Distance.put(s, algebra.best());
-		queue.add(s);
-
-		while (!queue.isEmpty()) {
-			Airport u = queue.poll();
-			u.scan();
-			for (Airport v : graph.neighboursOf(u)) {
-
-				if (!v.isScanned()) {
-					T weight = algebra.W(graph.getRoute(u, v));
-
-					T distanceThroughU = algebra.bigOPlus(Distance.get(u), weight);
-					if (algebra.order(distanceThroughU, Distance.get(v)) < 0) {
-						Distance.put(v, distanceThroughU);
-						prev.put(v, u);
-						queue.remove(v);
-						queue.add(v);
-					}
-				}
-			}
-		}
-
-		List<Airport> toReturn = Lists.newLinkedList();
-		Airport u = t;
-		while (prev.get(u) != null) {
-			toReturn.add(u);
-			u = prev.get(u);
-		}
-		toReturn.add(s);
-
-		Collections.reverse(toReturn);
-		return toReturn;
-	}
-
-	public AbstractAlgebra<T> getAlgebra() {
-		return algebra;
+		return algebra2.getClass().getSimpleName() + algebra.getClass().getSimpleName();
 	}
 }

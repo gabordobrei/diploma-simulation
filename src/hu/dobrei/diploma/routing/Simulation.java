@@ -8,7 +8,6 @@ import hu.dobrei.diploma.network.Airport;
 import hu.dobrei.diploma.network.Flight;
 import hu.dobrei.diploma.network.OpenFlightsNetwork;
 import hu.dobrei.diploma.network.Route;
-import hu.dobrei.diploma.network.Route.RelaxedRoute;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +16,14 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
+import com.google.common.collect.Table.Cell;
 import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class Simulation {
 	private final Stopwatch stopwatch;
@@ -48,13 +49,15 @@ public class Simulation {
 		final Routing<Integer> os = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new ShortestAlgebra());
 		final Routing<Integer> ol = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new LeastHopAlgebra());
 
-		routings = ImmutableSet.of(ks, kl, os, ol, s, l);
+		routings = ImmutableSet.of(s, l, ks, kl, os, ol);
 
 		printCurrentTime("Preparation time: ");
 	}
 
 	public void run() {
 		String fileName;
+		String result;
+		String meta;
 		List<List<Route>> simulatedRoutes;
 
 		for (Routing<Integer> routing : routings) {
@@ -65,10 +68,41 @@ public class Simulation {
 				simulatedRoutes.add(getSimulationResult(routing, flight));
 			}
 
-			fileName = getFileName(routing.getAlgebra());
-			//saveSimulationToFile(simulatedRoutes, fileName);
+			fileName = getFileName(routing.getAlgebraName());
+			result = processRoutes(simulatedRoutes);
+			meta = getMeta(simulatedRoutes);
+			saveSimulationToFile(result, meta, fileName);
 			printCurrentTime(fileName);
 		}
+	}
+
+	private String getMeta(List<List<Route>> simulatedRoutes) {
+		// TODO Auto-generated method stub
+		Table<Integer, Integer, Integer> edgeCount = HashBasedTable.create();
+		for (List<Route> list : simulatedRoutes) {
+			for (Route route : list) {
+				route.getSourceAirport().kifok++;
+				route.getDestinationAirport().befok++;
+			}
+		}
+
+		Airport a;
+		for (List<Route> list : simulatedRoutes) {
+			for (Route route : list) {
+				a = route.getSourceAirport();
+				edgeCount.put(a.getId(), a.kifok, a.befok);
+				a = route.getDestinationAirport();
+				edgeCount.put(a.getId(), a.kifok, a.befok);
+			}
+		}
+
+		List<String> meta = Lists.newLinkedList();
+		meta.add("ID,Out,In");
+		for (Cell<Integer, Integer, Integer> c : edgeCount.cellSet()) {
+			meta.add(c.getRowKey() + "," + c.getColumnKey() + "," + c.getValue());
+		}
+
+		return Joiner.on('\n').join(meta);
 	}
 
 	private void printCurrentTime(String fileName) {
@@ -80,13 +114,8 @@ public class Simulation {
 		stopwatch.start();
 	}
 
-	private String getSimpleName(Object obj) {
-		return obj.getClass().getSimpleName();
-	}
-
-	private String getFileName(Object obj) {
-		String algebraName = getSimpleName(obj);
-		return "sim/" + algebraName + ".json";
+	private String getFileName(String algebraName) {
+		return algebraName + ".csv";
 	}
 
 	private List<Route> getSimulationResult(Routing<Integer> routing, Flight flight) {
@@ -113,22 +142,48 @@ public class Simulation {
 		return routeList;
 	}
 
-	private void saveSimulationToFile(List<List<Route>> routes, String fileName) {
-		List<List<RelaxedRoute>> toSave = Lists.newLinkedList();
-		for (List<Route> list : routes) {
-			List<RelaxedRoute> line = Lists.newLinkedList();
-			for (Route route : list) {
-				line.add(route.getRelaxation());
-			}
-			toSave.add(line);
-		}
-
-		Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	private void saveSimulationToFile(String content, String meta, String fileName) {
 		try {
-			Files.write(gson.toJson(toSave), new File(fileName), Charsets.UTF_8);
+			Files.write(content, new File("sim/" + fileName), Charsets.UTF_8);
+			Files.write(meta, new File("sim/meta-" + fileName), Charsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private String processRoutes(List<List<Route>> routes) {
+		List<String> content = Lists.newLinkedList();
+		content.add("HC,AL,OUT,IN");
+		for (List<Route> route : routes) {
+			String line = processListOfRoutes(route);
+			content.add(line);
+		}
+		return Joiner.on('\n').join(content);
+	}
+
+	private String processListOfRoutes(List<Route> journey) {
+		// TODO
+		int hopCount = journey.size();
+		long length = 0;
+		// List<String> out = Lists.newLinkedList();
+		// List<String> in = Lists.newLinkedList();
+		for (Route route : journey) {
+			length += route.getLength();
+			// out.add(String.valueOf(route.getSourceAirport().getId()));
+			// in.add(String.valueOf(route.getDestinationAirport().getId()));
+		}
+
+		// String outEdges = Joiner.on(';').join(out);
+		// String inEdges = Joiner.on(';').join(in);
+
+		String outEdges = String.valueOf(journey.get(0).getSourceAirport().getId());
+		String inEdges = String.valueOf(journey.get(journey.size() - 1).getDestinationAirport().getId());
+		List<String> line = Lists.newLinkedList();
+		line.add(String.valueOf(hopCount));
+		line.add(String.valueOf(length));
+		line.add(outEdges);
+		line.add(inEdges);
+		return Joiner.on(',').join(line);
 	}
 
 	private void parseNetwork(OpenFlightsNetwork network) throws IOException {

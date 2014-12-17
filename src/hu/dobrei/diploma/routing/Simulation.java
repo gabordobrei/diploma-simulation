@@ -97,9 +97,13 @@ public class Simulation {
 		}
 
 		List<String> meta = Lists.newLinkedList();
-		meta.add("ID,Out,In");
+		meta.add("ID,Out,In,Avg");
 		for (Cell<Integer, Integer, Integer> c : edgeCount.cellSet()) {
-			meta.add(c.getRowKey() + "," + c.getColumnKey() + "," + c.getValue());
+			int id = c.getRowKey();
+			int kifok = c.getColumnKey();
+			int befok = c.getValue();
+			double avg = (kifok + befok) / 2;
+			meta.add(id + "," + kifok + "," + befok + "," + avg);
 		}
 
 		return Joiner.on('\n').join(meta);

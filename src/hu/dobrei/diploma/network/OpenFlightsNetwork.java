@@ -158,7 +158,7 @@ public class OpenFlightsNetwork {
 					Airport sourceAirport = parsedFlight.getSourceAirport();
 					Airport destinationAirport = parsedFlight.getDestinationAirport();
 					parsedFlight.getAirline().flightCount++;
-
+					
 					if (!innerGraph.contains(sourceAirport, destinationAirport)) {
 						innerGraph.put(sourceAirport, destinationAirport, new Route(sourceAirport, destinationAirport));
 					}

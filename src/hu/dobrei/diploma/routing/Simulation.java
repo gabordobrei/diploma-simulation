@@ -12,26 +12,24 @@ import hu.dobrei.diploma.network.Route;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.common.collect.Table.Cell;
 import com.google.common.io.Files;
 
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class Simulation {
 	private final Stopwatch stopwatch;
 	private final OpenFlightsNetwork network = new OpenFlightsNetwork();
 	private final List<Flight> flightsOfAirline;
-	private final Set<Routing<Integer>> routings;
+	private final List<Routing> routings;
 
-	@SuppressWarnings("unchecked")
 	public Simulation() {
 		stopwatch = Stopwatch.createStarted();
 
@@ -42,25 +40,56 @@ public class Simulation {
 		}
 		flightsOfAirline = network.getCoreFlights();
 
-		final Routing<Integer> s = new Routing<>(network, new ShortestAlgebra());
-		final Routing<Integer> l = new Routing<>(network, new LeastHopAlgebra());
-		final Routing<Integer> ks = new Routing<>(network, new K_EarlyAdopterFindingAlgebra(), new ShortestAlgebra());
-		final Routing<Integer> kl = new Routing<>(network, new K_EarlyAdopterFindingAlgebra(), new LeastHopAlgebra());
-		final Routing<Integer> os = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new ShortestAlgebra());
-		final Routing<Integer> ol = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new LeastHopAlgebra());
+		final Routing<Integer, Integer> s = new Routing<>(network, new ShortestAlgebra());
+		final Routing<Integer, Integer> l = new Routing<>(network, new LeastHopAlgebra());
+		final Routing<Integer, Integer> ls = new Routing<>(network, new LeastHopAlgebra(), new ShortestAlgebra());
+		final Routing<Integer, Integer> sl = new Routing<>(network, new ShortestAlgebra(), new LeastHopAlgebra());
+		final Routing<Integer, Integer> ks = new Routing<>(network, new K_EarlyAdopterFindingAlgebra(), new ShortestAlgebra());
+		final Routing<Integer, Integer> kl = new Routing<>(network, new K_EarlyAdopterFindingAlgebra(), new LeastHopAlgebra());
+		final Routing<Double, Integer> os = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new ShortestAlgebra());
+		final Routing<Double, Integer> ol = new Routing<>(network, new O_BusyAirportFindingAlgebra(), new LeastHopAlgebra());
 
-		routings = ImmutableSet.of(s, l, ks, kl, os, ol);
+		routings = Lists.newLinkedList();
+//		routings.add(s);
+//		routings.add(l);
+//		routings.add(ls);
+//		routings.add(sl);
+//		routings.add(ks);
+//		routings.add(kl);
+		routings.add(os);
+		routings.add(ol);
 
 		printCurrentTime("Preparation time: ");
 	}
 
+	
 	public void run() {
 		String fileName;
 		String result;
 		String meta;
 		List<List<Route>> simulatedRoutes;
 
-		for (Routing<Integer> routing : routings) {
+		/*-
+		restartTimer();
+		simulatedRoutes = Lists.newLinkedList();
+		List<Route> routeList;
+		Airport u, v;
+		for (Flight flight : flightsOfAirline) {
+			u = flight.getSourceAirport();
+			v = flight.getDestinationAirport();
+			Route r = network.getRoute(u, v);
+			routeList = Lists.newLinkedList();
+			routeList.add(r);
+			simulatedRoutes.add(routeList);
+		}
+		fileName = "default.csv";
+		result = processRoutes(simulatedRoutes);
+		meta = getMeta(simulatedRoutes);
+		saveSimulationToFile(result, meta, fileName);
+		printCurrentTime(fileName);
+		//*/
+
+		for (Routing routing : routings) {
 			restartTimer();
 
 			simulatedRoutes = Lists.newLinkedList();
@@ -77,8 +106,13 @@ public class Simulation {
 	}
 
 	private String getMeta(List<List<Route>> simulatedRoutes) {
-		// TODO Auto-generated method stub
 		Table<Integer, Integer, Integer> edgeCount = HashBasedTable.create();
+		for (List<Route> list : simulatedRoutes) {
+			for (Route route : list) {
+				route.getSourceAirport().kifok = 0;
+				route.getDestinationAirport().befok = 0;
+			}
+		}
 		for (List<Route> list : simulatedRoutes) {
 			for (Route route : list) {
 				route.getSourceAirport().kifok++;
@@ -97,13 +131,12 @@ public class Simulation {
 		}
 
 		List<String> meta = Lists.newLinkedList();
-		meta.add("ID,Out,In,Avg");
+		meta.add("ID,Out,In");
 		for (Cell<Integer, Integer, Integer> c : edgeCount.cellSet()) {
 			int id = c.getRowKey();
 			int kifok = c.getColumnKey();
 			int befok = c.getValue();
-			double avg = (kifok + befok) / 2;
-			meta.add(id + "," + kifok + "," + befok + "," + avg);
+			meta.add(id + "," + kifok + "," + befok);
 		}
 
 		return Joiner.on('\n').join(meta);
@@ -122,7 +155,7 @@ public class Simulation {
 		return algebraName + ".csv";
 	}
 
-	private List<Route> getSimulationResult(Routing<Integer> routing, Flight flight) {
+	private List<Route> getSimulationResult(Routing routing, Flight flight) {
 		Airport sourceAirport = flight.getSourceAirport();
 		Airport destinationAirport = flight.getDestinationAirport();
 		routing.computeAllPreferredPathsFrom(sourceAirport);
@@ -157,7 +190,7 @@ public class Simulation {
 
 	private String processRoutes(List<List<Route>> routes) {
 		List<String> content = Lists.newLinkedList();
-		content.add("HC,AL,OUT,IN");
+		content.add("OUT,IN,HC,AL,DAL");
 		for (List<Route> route : routes) {
 			String line = processListOfRoutes(route);
 			content.add(line);
@@ -166,27 +199,29 @@ public class Simulation {
 	}
 
 	private String processListOfRoutes(List<Route> journey) {
-		// TODO
 		int hopCount = journey.size();
 		long length = 0;
-		// List<String> out = Lists.newLinkedList();
-		// List<String> in = Lists.newLinkedList();
 		for (Route route : journey) {
 			length += route.getLength();
-			// out.add(String.valueOf(route.getSourceAirport().getId()));
-			// in.add(String.valueOf(route.getDestinationAirport().getId()));
 		}
-
-		// String outEdges = Joiner.on(';').join(out);
-		// String inEdges = Joiner.on(';').join(in);
-
-		String outEdges = String.valueOf(journey.get(0).getSourceAirport().getId());
-		String inEdges = String.valueOf(journey.get(journey.size() - 1).getDestinationAirport().getId());
+		if (journey.size() > 1) {
+			System.out.println(journey);
+		}
+		Airport s = journey.get(0).getSourceAirport();
+		Airport d = journey.get(journey.size() - 1).getDestinationAirport();
+		String outEdges = String.valueOf(s.getId());
+		String inEdges = String.valueOf(d.getId());
+		Route r = network.getRoute(s, d);
+		if (journey.size() > 1) {
+			System.err.println(r);
+		}
+		long defaultLength = r.getLength();
 		List<String> line = Lists.newLinkedList();
-		line.add(String.valueOf(hopCount));
-		line.add(String.valueOf(length));
 		line.add(outEdges);
 		line.add(inEdges);
+		line.add(String.valueOf(hopCount));
+		line.add(String.valueOf(length));
+		line.add(String.valueOf(defaultLength));
 		return Joiner.on(',').join(line);
 	}
 

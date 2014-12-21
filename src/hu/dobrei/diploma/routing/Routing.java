@@ -19,10 +19,10 @@ import java.util.Set;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class Routing<T> {
+public class Routing<T2, T> {
 	private final OpenFlightsNetwork graph;
 	private final AbstractAlgebra<T> algebra;
-	private final AbstractAlgebra<T> algebra2;
+	private final AbstractAlgebra<T2> algebra2;
 
 	private Set<List<Airport>> allPreferredPath;
 
@@ -32,7 +32,7 @@ public class Routing<T> {
 		this.algebra2 = null;
 	}
 
-	public Routing(OpenFlightsNetwork graph, AbstractAlgebra<T> algebra2, AbstractAlgebra<T> algebra) {
+	public Routing(OpenFlightsNetwork graph, AbstractAlgebra<T2> algebra2, AbstractAlgebra<T> algebra) {
 		this.graph = graph;
 		this.algebra2 = algebra2;
 		this.algebra = algebra;
@@ -108,7 +108,7 @@ public class Routing<T> {
 		Set<List<Airport>> allPreferredPaths = this.getAllPreferredPathsTo(destinationAirport);
 		List<Airport> airportList = null;
 		if (algebra2 != null) {
-			T min = algebra2.phi();
+			T2 min = algebra2.phi();
 			for (List<Airport> list : allPreferredPaths) {
 				List<Route> routeList;
 				if (!list.get(list.size() - 1).equals(destinationAirport)) {
@@ -116,7 +116,7 @@ public class Routing<T> {
 				} else {
 					routeList = getRoutes(list);
 				}
-				T act = algebra2.W(routeList);
+				T2 act = algebra2.W(routeList);
 				if (algebra2.order(act, min) <= 0) {
 					min = act;
 					airportList = list;

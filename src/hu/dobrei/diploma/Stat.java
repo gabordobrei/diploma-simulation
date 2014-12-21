@@ -9,12 +9,19 @@ import com.google.common.collect.Table.Cell;
 
 public class Stat {
 	Table<Integer, Integer, Integer> scatter = HashBasedTable.create();
-	int step = 10;
+	/*
+	boolean zoom = true;
+	/*/
+	boolean zoom = false;
+	//*/
+	int step;
 	int size = 0;
 	int max = 0;
 
 	public Stat(List<Ent> list) {
 		size = list.size();
+
+		step = zoom ? 1 : 10;
 
 		for (Ent e : list) {
 			max = Math.max(max, Math.max(e.out, e.in));
@@ -42,7 +49,11 @@ public class Stat {
 			}
 		}
 
-		print();
+		if (zoom) {
+			printZoom();
+		} else {
+			print();
+		}
 	}
 
 	private void print() {

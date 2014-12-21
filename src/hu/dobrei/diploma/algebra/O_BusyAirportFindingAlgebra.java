@@ -2,30 +2,30 @@ package hu.dobrei.diploma.algebra;
 
 import hu.dobrei.diploma.network.Route;
 
-public class O_BusyAirportFindingAlgebra extends AbstractAlgebra<Integer> {
+public class O_BusyAirportFindingAlgebra extends AbstractAlgebra<Double> {
 
 	@Override
-	public Integer W(Route route) {
-		return route == null ? Integer.MIN_VALUE : route.getFlightCount();
+	public Double W(Route route) {
+		return (route.getSourceAirport().nepszeruseg + route.getDestinationAirport().nepszeruseg) / 2.0;
 	}
 
 	@Override
-	public Integer bigOPlus(Integer w1, Integer w2) {
+	public Double bigOPlus(Double w1, Double w2) {
 		return Math.max(w1, w2);
 	}
 
 	@Override
-	public Integer phi() {
-		return 0;
+	public Double phi() {
+		return 0.0;
 	}
 
 	@Override
-	public Integer best() {
-		return Integer.MAX_VALUE;
+	public Double best() {
+		return Double.POSITIVE_INFINITY;
 	}
 
 	@Override
-	public int order(Integer w1, Integer w2) {
-		return -1 * Integer.compare(w1, w2);
+	public int order(Double w1, Double w2) {
+		return -1 * Double.compare(w1, w2);
 	}
 }

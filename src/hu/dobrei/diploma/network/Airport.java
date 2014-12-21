@@ -51,11 +51,10 @@ public class Airport {
 	private final double zimezone;
 	private final DST dst;
 
-	public int kifok = 0, befok = 0;
+	public int kifok = 0, befok = 0, nepszeruseg = 0;
 
 	private Airport previous;
 	private List<Airport> prev;
-	private boolean scanned = false;
 
 	public Airport(int airportId, String name, String city, String country, String IATA_FAA, String ICAO,
 			double latitude, double longitude, double altitude, double zimezone, DST dst) {
@@ -150,27 +149,5 @@ public class Airport {
 	@Override
 	public String toString() {
 		return "(" + airportId + ", " + name + ")";
-	}
-
-	public String toLongString() {
-		return "Airport [airportID=" + airportId + ", name=" + name + ", city=" + city + ", country=" + country
-				+ ", IATA_FAA=" + IATA_FAA + ", ICAO=" + ICAO + ", latitude=" + latitude + ", longitude=" + longitude
-				+ ", altitude=" + altitude + ", zimezone=" + zimezone + ", dst=" + dst + "]";
-	}
-
-	public void scan() {
-		this.scanned = true;
-	}
-
-	public boolean isScanned() {
-		return this.scanned;
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + airportId;
-		return result;
 	}
 }

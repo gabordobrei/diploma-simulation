@@ -105,8 +105,7 @@ public class OpenFlightsNetwork {
 				try {
 					Airline airline = new Airline(args);
 					airlines.put(airline.getId(), airline);
-				} catch (NumberFormatException nobodyGivesAFuck) {
-					// Die silently, nobody gives a fuck
+				} catch (NumberFormatException e) {
 				}
 				return true;
 			}
@@ -127,8 +126,7 @@ public class OpenFlightsNetwork {
 				try {
 					Airport airport = new Airport(args);
 					airports.put(airport.getId(), airport);
-				} catch (NumberFormatException nobodyGivesAFuck) {
-					// Die silently, nobody gives a fuck
+				} catch (NumberFormatException e) {
 				}
 				return true;
 			}
@@ -168,8 +166,7 @@ public class OpenFlightsNetwork {
 						coreFlights.add(parsedFlight);
 					}
 
-				} catch (IllegalArgumentException nobodyGivesAFuck) {
-					// Die silently, nobody gives a fuck
+				} catch (IllegalArgumentException e) {
 				}
 				return true;
 			}
